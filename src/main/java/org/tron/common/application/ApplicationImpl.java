@@ -66,6 +66,9 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
+    
+
+
     logger.info("******** begin to shutdown ********");
     synchronized (dbManager.getRevokingStore()) {
       closeRevokingStore();
