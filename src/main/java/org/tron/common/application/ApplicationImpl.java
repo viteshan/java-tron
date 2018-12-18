@@ -1,8 +1,22 @@
 package org.tron.common.application;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tron.common.utils.ByteArray;
+import org.tron.common.utils.Sha256Hash;
+import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.BlockStore;
 import org.tron.core.db.Manager;
@@ -66,7 +80,46 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
-    logger.info("******** begin to shutdown ********");
+    List<BlockCapsule> result=  new ArrayList<BlockCapsule>();
+
+    long startTime = System.currentTimeMillis();
+    ExecutorService executorService =  Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    for (int i = 0; i < 1000; i ++ ) {
+      int finalI = i;
+      executorService.execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(4939500 + finalI * 1000, 1000);
+            if (value.size() == 0) return;
+            result.addAll(value);
+          } catch (Exception e) {
+          }
+        }
+      });
+    }
+    while(true){
+      try {
+        if(executorService.isTerminated()){
+          System.out.println("all sub thread is end");
+          break;
+        }
+        Thread.sleep(1000);
+      }catch (Exception e){
+        e.printStackTrace();
+      }
+    }
+
+    HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
+    for (BlockCapsule blockCapsule : result) {
+      for (TransactionCapsule trx : blockCapsule.getTransactions()) {
+        hset.add(trx.getTransactionId());
+      }
+    }
+
+    long end = System.currentTimeMillis();
+
+    logger.info("******** begin to shutdown ********" + (end - startTime));
     synchronized (dbManager.getRevokingStore()) {
       closeRevokingStore();
       closeAllStore();
