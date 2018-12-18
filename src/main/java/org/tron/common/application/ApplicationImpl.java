@@ -83,31 +83,12 @@ public class ApplicationImpl implements Application {
     List<BlockCapsule> result=  new ArrayList<BlockCapsule>();
 
     long startTime = System.currentTimeMillis();
-    ExecutorService executorService =  Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     for (int i = 0; i < 1000; i ++ ) {
       int finalI = i;
-      executorService.execute(new Runnable() {
-        @Override
-        public void run() {
-          try {
-            List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(4939500 + finalI * 1000, 1000);
-            if (value.size() == 0) return;
-            result.addAll(value);
-          } catch (Exception e) {
-          }
-        }
-      });
-    }
-    while(true){
-      try {
-        if(executorService.isTerminated()){
-          System.out.println("all sub thread is end");
-          break;
-        }
-        Thread.sleep(1000);
-      }catch (Exception e){
-        e.printStackTrace();
-      }
+      List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(4939500 + finalI * 1000, 1000);
+      System.out.println("===" + value.size());
+      if (value.size() == 0) break;
+      result.addAll(value);
     }
 
     HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
