@@ -86,6 +86,9 @@ import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
 import org.tron.protos.Protocol.AccountType;
+import org.tron.protos.Protocol.Block;
+import org.tron.protos.Protocol.BlockHeader;
+import org.tron.protos.Protocol.BlockHeader.raw;
 
 
 @Slf4j
@@ -403,6 +406,7 @@ public class Manager {
         .newFixedThreadPool(Args.getInstance().getValidateSignThreadNum());
     repushThread = new Thread(repushLoop);
     repushThread.start();
+
   }
 
   public BlockId getGenesisBlockId() {

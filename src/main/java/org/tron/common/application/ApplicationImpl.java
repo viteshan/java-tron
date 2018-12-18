@@ -8,16 +8,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tron.common.utils.ByteArray;
 import org.tron.core.capsule.BlockCapsule;
+import org.tron.core.capsule.TransactionCapsule;
 import org.tron.core.config.args.Args;
 import org.tron.core.db.BlockStore;
 import org.tron.core.db.Manager;
+import org.tron.core.db2.core.ISession;
+import org.tron.core.exception.BadItemException;
 import org.tron.core.net.node.Node;
 import org.tron.core.net.node.NodeDelegate;
 import org.tron.core.net.node.NodeDelegateImpl;
 import org.tron.core.net.node.NodeImpl;
+import org.tron.protos.Contract.TransferContract;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.BlockHeader;
 import org.tron.protos.Protocol.BlockHeader.raw;
+import org.tron.protos.Protocol.Transaction.Contract.ContractType;
 
 @Slf4j
 @Component
@@ -74,32 +79,61 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
-    ExecutorService executorService = Executors.newFixedThreadPool(2);
     BlockCapsule blockCapsule = new BlockCapsule(Block.newBuilder().setBlockHeader(
       BlockHeader.newBuilder().setRawData(raw.newBuilder().setParentHash(ByteString.copyFrom(
         ByteArray
           .fromHexString("0304f784e4e7bae517bcab94c3e0c9214fb4ac7ff9d7d5a937d1f40031f87b81")))
       )).build());
-    for (int i =0; i < 1000000; i ++) {
+    TransferContract tc =
+      TransferContract.newBuilder()
+        .setAmount(10)
+        .setOwnerAddress(ByteString.copyFromUtf8("aaa"))
+        .setToAddress(ByteString.copyFromUtf8("bbb"))
+        .build();
+    TransactionCapsule trx = new TransactionCapsule(tc, ContractType.TransferContract);
+    logger.info("======start " );
+    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+    for (int i =0; i < 2000; i ++) {
+      int finalI = i;
       executorService.execute(new Runnable() {
         @Override
         public void run() {
-          blockStoreDb.put(blockCapsule.getData(), blockCapsule);
+//          try (ISession tmpSession = dbManager.getRevokingStore().buildSession()) {
+//            dbManager.getBlockStore().put(blockCapsule.getData(), blockCapsule);
+//            tmpSession.commit();
+//          }
+//          dbManager.getBlockStore().put(blockCapsule.getData(), blockCapsule);
+          logger.info("======put " , finalI);
         }
       });
       executorService.execute(new Runnable() {
         @Override
         public void run() {
-          blockStoreDb.getBlockByLatestNum(4);
+          logger.info("======get " , finalI);
+//          try {
+//            TransactionCapsule trans = dbManager.getTransactionStore().get(trx.getTransactionId().getBytes());
+//            logger.info("======get " , finalI);
+//          } catch (BadItemException e) {
+//            e.printStackTrace();
+//          }
         }
       });
+    }
+    executorService.shutdown();
+    while(true){//等待所有任务都结束了继续执行
+      try {
+        if(executorService.isTerminated()){
+          System.out.println("所有的子线程都结束了！");
+          break;
+        }
+        Thread.sleep(1000);
+      }catch (Exception e){
+        e.printStackTrace();
+      }
     }
 
-    try {
-      executorService.wait(1000000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
+    logger.info("======print out");
 
     logger.info("******** begin to shutdown ********");
     synchronized (dbManager.getRevokingStore()) {
