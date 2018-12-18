@@ -85,10 +85,12 @@ import org.tron.core.exception.ValidateSignatureException;
 import org.tron.core.services.WitnessService;
 import org.tron.core.witness.ProposalController;
 import org.tron.core.witness.WitnessController;
+import org.tron.protos.Contract.TransferContract;
 import org.tron.protos.Protocol.AccountType;
 import org.tron.protos.Protocol.Block;
 import org.tron.protos.Protocol.BlockHeader;
 import org.tron.protos.Protocol.BlockHeader.raw;
+import org.tron.protos.Protocol.Transaction.Contract.ContractType;
 
 
 @Slf4j
@@ -794,6 +796,65 @@ public class Manager {
       BadNumberBlockException, BadBlockException, NonCommonBlockException,
       ReceiptCheckErrException, VMIllegalException {
     long start = System.currentTimeMillis();
+
+    BlockCapsule blockCapsule = new BlockCapsule(Block.newBuilder().setBlockHeader(
+      BlockHeader.newBuilder().setRawData(raw.newBuilder().setParentHash(ByteString.copyFrom(
+        ByteArray
+          .fromHexString("0304f784e4e7bae517bcab94c3e0c9214fb4ac7ff9d7d5a937d1f40031f87b81")))
+      )).build());
+    TransferContract tc =
+      TransferContract.newBuilder()
+        .setAmount(10)
+        .setOwnerAddress(ByteString.copyFromUtf8("aaa"))
+        .setToAddress(ByteString.copyFromUtf8("bbb"))
+        .build();
+    TransactionCapsule trx = new TransactionCapsule(tc, ContractType.TransferContract);
+    logger.info("======start " );
+    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+    executorService.execute(new Runnable() {
+        @Override
+        public void run() {
+          for (int i =0; i < 10000; i ++) {
+            int finalI = i;
+            try (ISession tmpSession = getRevokingStore().buildSession()) {
+              getBlockStore().put(blockCapsule.getData(), blockCapsule);
+              tmpSession.commit();
+            }
+            getBlockStore().put(blockCapsule.getData(), blockCapsule);
+          }
+        }
+      });
+
+    executorService.execute(new Runnable() {
+        @Override
+        public void run() {
+          for (int i =0; i < 10000; i ++) {
+            int finalI = i;
+            try {
+              TransactionCapsule trans = getTransactionStore()
+                .get(trx.getTransactionId().getBytes());
+            } catch (BadItemException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      });
+
+    executorService.shutdown();
+    while(true){//等待所有任务都结束了继续执行
+      try {
+        if(executorService.isTerminated()){
+          logger.info("所有的子线程都结束了！");
+          break;
+        }
+        Thread.sleep(1000);
+      }catch (Exception e){
+        e.printStackTrace();
+      }
+    }
+
+
     try (PendingManager pm = new PendingManager(this)) {
 
       if (!block.generatedByMyself) {

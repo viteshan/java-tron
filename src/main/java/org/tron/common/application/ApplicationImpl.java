@@ -79,62 +79,6 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
-    BlockCapsule blockCapsule = new BlockCapsule(Block.newBuilder().setBlockHeader(
-      BlockHeader.newBuilder().setRawData(raw.newBuilder().setParentHash(ByteString.copyFrom(
-        ByteArray
-          .fromHexString("0304f784e4e7bae517bcab94c3e0c9214fb4ac7ff9d7d5a937d1f40031f87b81")))
-      )).build());
-    TransferContract tc =
-      TransferContract.newBuilder()
-        .setAmount(10)
-        .setOwnerAddress(ByteString.copyFromUtf8("aaa"))
-        .setToAddress(ByteString.copyFromUtf8("bbb"))
-        .build();
-    TransactionCapsule trx = new TransactionCapsule(tc, ContractType.TransferContract);
-    logger.info("======start " );
-    ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-    for (int i =0; i < 2000; i ++) {
-      int finalI = i;
-      executorService.execute(new Runnable() {
-        @Override
-        public void run() {
-//          try (ISession tmpSession = dbManager.getRevokingStore().buildSession()) {
-//            dbManager.getBlockStore().put(blockCapsule.getData(), blockCapsule);
-//            tmpSession.commit();
-//          }
-//          dbManager.getBlockStore().put(blockCapsule.getData(), blockCapsule);
-          logger.info("======put " , finalI);
-        }
-      });
-      executorService.execute(new Runnable() {
-        @Override
-        public void run() {
-          logger.info("======get " , finalI);
-//          try {
-//            TransactionCapsule trans = dbManager.getTransactionStore().get(trx.getTransactionId().getBytes());
-//            logger.info("======get " , finalI);
-//          } catch (BadItemException e) {
-//            e.printStackTrace();
-//          }
-        }
-      });
-    }
-    executorService.shutdown();
-    while(true){//等待所有任务都结束了继续执行
-      try {
-        if(executorService.isTerminated()){
-          System.out.println("所有的子线程都结束了！");
-          break;
-        }
-        Thread.sleep(1000);
-      }catch (Exception e){
-        e.printStackTrace();
-      }
-    }
-
-    logger.info("======print out");
-
     logger.info("******** begin to shutdown ********");
     synchronized (dbManager.getRevokingStore()) {
       closeRevokingStore();
