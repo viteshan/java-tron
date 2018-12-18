@@ -23,8 +23,10 @@ import com.google.common.primitives.UnsignedBytes;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import lombok.extern.slf4j.Slf4j;
 import org.spongycastle.util.encoders.Hex;
 
+@Slf4j
 public class ByteUtil {
 
   public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
@@ -354,6 +356,9 @@ public class ByteUtil {
   public static int compare(byte[] bytes1, byte[] bytes2) {
     Preconditions.checkNotNull(bytes1);
     Preconditions.checkNotNull(bytes2);
+    if (bytes1.length  != bytes2.length) {
+      logger.info("length no equal", bytes1 , "bytes2", bytes2 );
+    }
     Preconditions.checkArgument(bytes1.length == bytes2.length);
     int length = bytes1.length;
     for (int i = 0; i < length; ++i) {

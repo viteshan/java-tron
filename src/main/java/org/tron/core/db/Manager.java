@@ -821,7 +821,6 @@ public class Manager {
               getBlockStore().put(blockCapsule.getData(), blockCapsule);
               tmpSession.commit();
             }
-            getBlockStore().put(blockCapsule.getData(), blockCapsule);
           }
         }
       });
@@ -839,7 +838,7 @@ public class Manager {
     while(true){//等待所有任务都结束了继续执行
       try {
         if(executorService.isTerminated()){
-          logger.info("all sub thread is end！");
+          logger.info("all sub thread is end&！");
           break;
         }
         Thread.sleep(1000);
