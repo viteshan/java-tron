@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -80,18 +81,37 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
-    HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
     long startTime = System.currentTimeMillis();
-    for (int i = 0; i < 1000; i ++ ) {
+    ExecutorService es = Executors.newFixedThreadPool(10);
+    HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
+
+    for (int i = 0; i < 10000; i ++ ) {
       int finalI = i;
-      List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(3800000 + finalI * 1000, 1000);
-      if (value.size() == 0) break;
-      for (BlockCapsule blockCapsule:value){
-        for (TransactionCapsule trx : blockCapsule.getTransactions()) {
-          hset.add(trx.getTransactionId());
+      if (3800000 + finalI * 10 > 4000000)
+        break;
+      es.execute(new Runnable() {
+        @Override
+        public void run() {
+          List<BlockCapsule> value = dbManager.getBlockStore()
+            .getLimitNumber(3800000+ finalI * 10, 10);
+          if (value.size() == 0)
+            return;
+          for (BlockCapsule blockCapsule : value) {
+            for (TransactionCapsule trx : blockCapsule.getTransactions()) {
+              hset.add(trx.getTransactionId());
+            }
+          }
         }
-      }
+      });
     }
+    es.shutdown();
+    try {
+      es.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+
     long end = System.currentTimeMillis();
     System.out.println("******** begin to shutdown start ********" + end +"start"+ startTime);
     logger.info("******** begin to shutdown start ********" + end +"start"+ startTime);
