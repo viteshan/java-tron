@@ -80,26 +80,21 @@ public class ApplicationImpl implements Application {
 
   @Override
   public void shutdown() {
-    List<BlockCapsule> result=  new ArrayList<BlockCapsule>();
-
+    HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
     long startTime = System.currentTimeMillis();
     for (int i = 0; i < 1000; i ++ ) {
       int finalI = i;
-      List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(4939500 + finalI * 1000, 1000);
+      List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(3800000 + finalI * 1000, 1000);
       if (value.size() == 0) break;
-      result.addAll(value);
-    }
-
-    HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
-    for (BlockCapsule blockCapsule : result) {
-      for (TransactionCapsule trx : blockCapsule.getTransactions()) {
-        hset.add(trx.getTransactionId());
+      for (BlockCapsule blockCapsule:value){
+        for (TransactionCapsule trx : blockCapsule.getTransactions()) {
+          hset.add(trx.getTransactionId());
+        }
       }
     }
-
     long end = System.currentTimeMillis();
-
-    logger.info("******** begin to shutdown ********" + (end - startTime));
+    System.out.println("******** begin to shutdown start ********" + end +"start"+ startTime);
+    logger.info("******** begin to shutdown start ********" + end +"start"+ startTime);
     synchronized (dbManager.getRevokingStore()) {
       closeRevokingStore();
       closeAllStore();

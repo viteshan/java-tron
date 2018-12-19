@@ -10,6 +10,7 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -790,6 +791,7 @@ public class Manager {
       BadNumberBlockException, BadBlockException, NonCommonBlockException,
       ReceiptCheckErrException, VMIllegalException {
     long start = System.currentTimeMillis();
+
     try (PendingManager pm = new PendingManager(this)) {
 
       if (!block.generatedByMyself) {
