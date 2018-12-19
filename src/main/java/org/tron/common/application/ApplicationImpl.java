@@ -82,18 +82,15 @@ public class ApplicationImpl implements Application {
   @Override
   public void shutdown() {
     long startTime = System.currentTimeMillis();
-    ExecutorService es = Executors.newFixedThreadPool(10);
+    ExecutorService es = Executors.newFixedThreadPool(100);
     HashSet<Sha256Hash> hset = new HashSet<Sha256Hash>();
-
-    for (int i = 0; i < 10000; i ++ ) {
+    for (int i = 0; i < 86400; i ++ ) {
       int finalI = i;
-      if (3800000 + finalI * 10 > 4000000)
-        break;
       es.execute(new Runnable() {
         @Override
         public void run() {
-          List<BlockCapsule> value = dbManager.getBlockStore()
-            .getLimitNumber(3800000+ finalI * 10, 10);
+          List<BlockCapsule> value =dbManager.getBlockStore()
+            .getLimitNumber(3800000+ finalI, 1);
           if (value.size() == 0)
             return;
           for (BlockCapsule blockCapsule : value) {
@@ -110,10 +107,8 @@ public class ApplicationImpl implements Application {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
-
-
     long end = System.currentTimeMillis();
-    System.out.println("******** begin to shutdown start ********" + end +"start"+ startTime);
+    System.out.println("******** begin to shutdown start ********" + end +"start"+ startTime + "size" +hset.size());
     logger.info("******** begin to shutdown start ********" + end +"start"+ startTime);
     synchronized (dbManager.getRevokingStore()) {
       closeRevokingStore();
