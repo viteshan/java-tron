@@ -86,7 +86,6 @@ public class ApplicationImpl implements Application {
     for (int i = 0; i < 1000; i ++ ) {
       int finalI = i;
       List<BlockCapsule> value =  dbManager.getBlockStore().getLimitNumber(4939500 + finalI * 1000, 1000);
-      System.out.println("===" + value.size());
       if (value.size() == 0) break;
       result.addAll(value);
     }
